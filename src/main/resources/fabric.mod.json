@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "selfcare-hive",
+	"version": "${version}",
+	"name": "Self-Care Hive",
+	"description": "Bees autonomously heal themselves and repopulate their hives.",
+	"authors": [
+		"Estecka"
+	],
+	"contact": {
+		"homepage": "https://modrinth.com/mod/selfcare-hive",
+		"sources": "https://github.com/Estecka/mc-SelfCare-Hive"
+	},
+	"license": "GNU AGPLv3",
+	"icon": "assets/selfcare-hive/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"tk.estecka.selfcarehive.SelfCareHive"
+		]
+	},
+	"mixins": [
+		"selfcare-hive.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.15.7",
+		"minecraft": "^1.15",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"recommends": {
+		"minecraft": "^1.19.4"
+	}
+}
