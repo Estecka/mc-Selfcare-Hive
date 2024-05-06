@@ -21,10 +21,12 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BeehiveBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BeehiveBlockEntity.BeeData;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.BeeEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -96,7 +98,7 @@ implements IBeeColonyTracker
 	}
 
 	@Inject( method="writeNbt", at=@At("TAIL") )
-	private void WriteCustomNBT(NbtCompound nbt, CallbackInfo ci){
+	private void WriteCustomNBT(NbtCompound nbt, RegistryWrapper.WrapperLookup registries, CallbackInfo ci){
 		if (!knownBees.isEmpty()){
 			NbtCompound list = new NbtCompound();
 			for (var entry : knownBees.entrySet())
@@ -105,7 +107,7 @@ implements IBeeColonyTracker
 		}
 	}
 	@Inject( method="readNbt", at=@At("TAIL") )
-	private void ReadCustomNBT(NbtCompound nbt, CallbackInfo ci){
+	private void ReadCustomNBT(NbtCompound nbt, RegistryWrapper.WrapperLookup registries, CallbackInfo ci){
 		if (nbt.contains(KNOWNBEES_KEY, NbtElement.COMPOUND_TYPE)){
 			NbtCompound list = nbt.getCompound(KNOWNBEES_KEY);
 			for (String key : list.getKeys()){
@@ -124,8 +126,8 @@ implements IBeeColonyTracker
 	}
 
 
-	@Inject(method="tryEnterHive(Lnet/minecraft/entity/Entity;ZI)V", at=@At("TAIL"))
-	private void OnBeeEntrance(Entity bee, boolean hasNectar, int ticksInHive, CallbackInfo ci){
+	@Inject(method="tryEnterHive(Lnet/minecraft/entity/Entity;)V", at=@At("TAIL"))
+	private void OnBeeEntrance(Entity bee, CallbackInfo ci){
 		UUID uuid = bee.getUuid();
 		if (FabricLoader.getInstance().isDevelopmentEnvironment() && !this.knownBees.containsKey(uuid))
 			SelfCareHive.LOGGER.warn("An unknown bee joined the hive: {}", uuid);
@@ -145,7 +147,7 @@ implements IBeeColonyTracker
 	 * properly set, so babies  need to have  their position  updated at a later
 	 * time.
 	 */
-	@ModifyExpressionValue( method="releaseBee", expect=1, at=@At(value="INVOKE", target="net/minecraft/entity/EntityType.loadEntityWithPassengers (Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/world/World;Ljava/util/function/Function;)Lnet/minecraft/entity/Entity;") )
+	@ModifyExpressionValue( method="releaseBee", expect=1, at=@At(value="INVOKE", target="net/minecraft/block/entity/BeehiveBlockEntity$BeeData.loadEntity (Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/entity/Entity;") )
 	static private Entity OnBeeEntityCreated(Entity original, World world, BlockPos pos, @Local(argsOnly=true) LocalRef<BlockState> stateRef, @Share("baby") LocalRef<BeeEntity> babyRef)
 	{
 		if (original instanceof BeeEntity bee && !world.isClient() && world.getBlockEntity(pos) instanceof BeehiveBlockEntity hive){
@@ -156,7 +158,7 @@ implements IBeeColonyTracker
 			var result = BeehiveUtil.TryCreateBaby(bee, colony, (ServerWorld)world, hiveState, pos);
 			baby = result.getLeft();
 			hiveState = result.getRight();
-			
+
 			hiveState = BeehiveUtil.TryHeal(bee, world, hiveState, pos);
 
 			colony.selfcarehive$RememberBee(bee.getUuid());
@@ -182,8 +184,11 @@ implements IBeeColonyTracker
 	/**
 	 * Makes bees leave the nest instantly for testing purposes
 	 */
-	@ModifyArg( method="tryEnterHive(Lnet/minecraft/entity/Entity;ZI)V", at=@At(value="INVOKE", target="net/minecraft/block/entity/BeehiveBlockEntity.addBee (Lnet/minecraft/nbt/NbtCompound;IZ)V") )
-	private int IncreaseTicksInHive(int original){
-		return FabricLoader.getInstance().isDevelopmentEnvironment() ? 2380 : original;
+	@ModifyArg( method="tryEnterHive(Lnet/minecraft/entity/Entity;)V", at=@At(value="INVOKE", target="net/minecraft/block/entity/BeehiveBlockEntity.addBee (Lnet/minecraft/block/entity/BeehiveBlockEntity$BeeData;)V") )
+	private BeeData ReduceExitDelay(BeeData original){
+		if (!FabricLoader.getInstance().isDevelopmentEnvironment())
+			return original;
+
+		return new BeeData(original.entityData(), 0, 20);
 	}
 }
