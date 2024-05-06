@@ -135,14 +135,14 @@ implements IBeeColonyTracker
 
 	/**
 	 * @implNote At this point, the BeeEntity that is being released has not yet
-	 * been removed  from  the hive's  own internal counter.  (This is never
-	 * done inside `releaseBee`, only after the method has ended.)
-	 * For this reason `rememberBee` must be called  AFTER  we evaluate the size
-	 * of the colony, otherwise it will count one extra member.
+	 * been  removed  from the  hive's  own internal  counter. For  this  reason
+	 * `rememberBee`  must  be called  AFTER `tryCreateBaby`, otherwise  it will
+	 * count one bee too many, and refuse to create an offspring.
 	 * 
 	 * @implNote This handler is intentionally injected  before the released bee
-	 * has deposited its nectar. However, the bee's position in the world is not
-	 * yet properly set, so babies need to have their position updated at a later
+	 * has deposited its nectar, so that bee may attempt to consume it first and
+	 * avoid  overflow. However, the  bee's  position  in the  world  is not yet
+	 * properly set, so babies  need to have  their position  updated at a later
 	 * time.
 	 */
 	@ModifyExpressionValue( method="releaseBee", expect=1, at=@At(value="INVOKE", target="net/minecraft/entity/EntityType.loadEntityWithPassengers (Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/world/World;Ljava/util/function/Function;)Lnet/minecraft/entity/Entity;") )
