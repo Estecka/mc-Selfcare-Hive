@@ -60,6 +60,10 @@ implements IBeeColonyTracker
 	@Shadow public int	getBeeCount(){ throw new AssertionError(); }
 
 
+/******************************************************************************/
+/* # Colony Tracker                                                           */
+/******************************************************************************/
+
 	private void GarbageCollectBees() {
 		// Updates absence times, and removes bees that are deemed missing.
 		final int maxAbsence = this.getWorld().getGameRules().getInt(SelfCareHive.TRACKING_DURATION);
@@ -107,13 +111,18 @@ implements IBeeColonyTracker
 	}
 
 	public boolean selfcarehive$isColonyFull(){
-		GarbageCollectBees();
+		this.GarbageCollectBees();
 		return (this.getBeeCount() + this.knownBees.size()) >= MAX_BEE_COUNT;
 	}
 
 	public void selfcarehive$RememberBee(UUID uuid){
 		knownBees.put(uuid, 0L);
 	}
+
+
+/******************************************************************************/
+/* # Serialization                                                            */
+/******************************************************************************/
 
 	@Inject( method="writeNbt", at=@At("TAIL") )
 	private void WriteCustomNBT(NbtCompound nbt, CallbackInfo ci){
@@ -124,6 +133,7 @@ implements IBeeColonyTracker
 			nbt.put(KNOWNBEES_KEY, list);
 		}
 	}
+
 	@Inject( method="readNbt", at=@At("TAIL") )
 	private void ReadCustomNBT(NbtCompound nbt, CallbackInfo ci){
 		if (nbt.contains(KNOWNBEES_KEY, NbtElement.COMPOUND_TYPE)){
@@ -144,6 +154,10 @@ implements IBeeColonyTracker
 	}
 
 
+/******************************************************************************/
+/* # Lifecycle                                                                */
+/******************************************************************************/
+
 	@Inject(method="tryEnterHive(Lnet/minecraft/entity/Entity;ZI)V", at=@At("TAIL"))
 	private void OnBeeEntrance(Entity bee, boolean hasNectar, int ticksInHive, CallbackInfo ci){
 		UUID uuid = bee.getUuid();
@@ -156,7 +170,7 @@ implements IBeeColonyTracker
 	/**
 	 * @implNote At this point, the BeeEntity that is being released has not yet
 	 * been  removed  from the  hive's  own internal  counter. For  this  reason
-	 * `rememberBee`  must  be called  AFTER `tryCreateBaby`, otherwise  it will
+	 * `tryCreateBaby` must  be called  BEFORE `rememberBee`, otherwise  it will
 	 * count one bee too many, and refuse to create an offspring.
 	 * 
 	 * @implNote This handler is intentionally injected  before the released bee
