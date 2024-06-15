@@ -22,7 +22,7 @@ implements ModInitializer
 	static public final Logger LOGGER = LoggerFactory.getLogger("selfcare-hive");
 
 	static public final CustomGameRuleCategory CATEGORY = new CustomGameRuleCategory(
-		new Identifier("selfcare-hive", "gamerules"),
+		Identifier.of("selfcare-hive", "gamerules"),
 		Text.translatable("selfcarehive.gamerules").formatted(Formatting.BOLD, Formatting.YELLOW)
 	);
 	
