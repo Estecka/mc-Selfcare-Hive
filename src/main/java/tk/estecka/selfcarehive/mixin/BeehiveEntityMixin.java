@@ -158,6 +158,11 @@ implements IBeeColonyTracker
 /* # Lifecycle                                                                */
 /******************************************************************************/
 
+	@Inject(method="serverTick", at=@At("HEAD"))
+	static private void tick(World world, BlockPos pos, BlockState state, BeehiveBlockEntity blockEntity, CallbackInfo info){
+		++((BeehiveEntityMixin)(Object)blockEntity).elapsedTicks;
+	}
+
 	@Inject(method="tryEnterHive(Lnet/minecraft/entity/Entity;ZI)V", at=@At("TAIL"))
 	private void OnBeeEntrance(Entity bee, boolean hasNectar, int ticksInHive, CallbackInfo ci){
 		UUID uuid = bee.getUuid();
