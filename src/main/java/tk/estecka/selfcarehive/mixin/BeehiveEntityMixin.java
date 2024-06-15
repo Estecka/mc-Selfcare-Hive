@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.joml.Math;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -42,30 +43,49 @@ extends BlockEntity
 implements IBeeColonyTracker
 {
 	static private final String KNOWNBEES_KEY = "selfcare-hive:KnownBees";
+
+	/**
+	 * The UUID of bees that have left the nest, and the amount of ticks since
+	 * they left. These values are only updated during garbage collection.
+	 */
 	private final Map<UUID,Long> knownBees = new HashMap<>(MAX_BEE_COUNT + 1);
+	
+	/**
+	 * Ticks since the previous garbage collection.
+	 */
+	private long elapsedTicks = 0;
+
 
 	private BeehiveEntityMixin(){ super(null, null, null); }
 	@Shadow public int	getBeeCount(){ throw new AssertionError(); }
 
 
-	private void GarbageCollectBees(){
-		long minLastSeen = this.getWorld().getTime() - this.getWorld().getGameRules().getInt(SelfCareHive.TRACKING_DURATION);
-		knownBees.entrySet().removeIf(entry -> {
-			boolean r = entry.getValue() < minLastSeen;
-			if (r && FabricLoader.getInstance().isDevelopmentEnvironment())
-				SelfCareHive.LOGGER.warn("A bee has gone missing: {}", entry.getKey());
-			return r;
-		});
+	private void GarbageCollectBees() {
+		// Updates absence times, and removes bees that are deemed missing.
+		final int maxAbsence = this.getWorld().getGameRules().getInt(SelfCareHive.TRACKING_DURATION);
+		var iterator = knownBees.entrySet().iterator();
+		while (iterator.hasNext()) {
+			var entry = iterator.next();
+			long absenceTime = this.elapsedTicks + entry.getValue();
 
-		int maxKnownBees = MAX_BEE_COUNT - this.getBeeCount();
-		if (maxKnownBees < 0)
-			maxKnownBees = 0;
+			if (absenceTime < maxAbsence)
+				entry.setValue(absenceTime);
+			else {
+				iterator.remove();
+				if (FabricLoader.getInstance().isDevelopmentEnvironment())
+					SelfCareHive.LOGGER.warn("A bee has gone missing: {}", entry.getKey());
+			}
+		}
+		this.elapsedTicks = 0;
 
+		// Removes bees that were pushed out by new inhabitants.
+		final int maxKnownBees = Math.max(0, MAX_BEE_COUNT - this.getBeeCount());
 		if (knownBees.size() > maxKnownBees) {
-			// Sort from newest (largest) to oldest (smallest)
+			// Sorts from newest (smallest) to oldest (largest)
 			final var sortedEntries = new ArrayList<>(knownBees.entrySet());
-			sortedEntries.sort( (a, b) -> -Long.compare(a.getValue(), b.getValue()) );
-	
+			sortedEntries.sort( (a, b) -> Long.compare(a.getValue(), b.getValue()) );
+
+			// Skips the first few bees (the newest), removes the rest.
 			for (int i=maxKnownBees; i<sortedEntries.size(); ++i){
 				if (FabricLoader.getInstance().isDevelopmentEnvironment())
 					SelfCareHive.LOGGER.warn("Superfluous bee was pruned: {}", sortedEntries.get(i).getKey());
@@ -92,7 +112,7 @@ implements IBeeColonyTracker
 	}
 
 	public void selfcarehive$RememberBee(UUID uuid){
-		knownBees.put(uuid, this.getWorld().getTime());
+		knownBees.put(uuid, 0L);
 	}
 
 	@Inject( method="writeNbt", at=@At("TAIL") )
