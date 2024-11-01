@@ -19,7 +19,7 @@ public class BeehiveUtil
 	}
 
 	static public BlockState TryHeal(BeeEntity bee, World world, BlockState hiveState, BlockPos hivePos){
-		GameRules rules = world.getGameRules();
+		GameRules rules = world.getServer().getGameRules();
 		boolean canHeal = rules.getBoolean(SelfCareHive.CAN_HEAL);
 		int cost = rules.getInt(SelfCareHive.HEALING_COST);
 		float potency = (float)rules.get(SelfCareHive.HEALING_AMOUNT).get();
@@ -38,7 +38,7 @@ public class BeehiveUtil
 	}
 
 	static public Pair<@Nullable BeeEntity, BlockState>	TryCreateBaby(BeeEntity parent, IBeeColonyTracker colony, ServerWorld world, BlockState hiveState, BlockPos hivePos){
-		GameRules rules = world.getGameRules();
+		GameRules rules = world.getServer().getGameRules();
 		boolean canBreed = rules.getBoolean(SelfCareHive.CAN_BREED);
 		int cost = rules.getInt(SelfCareHive.BREEDING_COST);
 

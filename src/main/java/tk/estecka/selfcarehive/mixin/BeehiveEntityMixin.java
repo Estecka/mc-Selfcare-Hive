@@ -68,7 +68,7 @@ implements IBeeColonyTracker
 
 	private void GarbageCollectBees() {
 		// Updates absence times, and removes bees that are deemed missing.
-		final int maxAbsence = this.getWorld().getGameRules().getInt(SelfCareHive.TRACKING_DURATION);
+		final int maxAbsence = this.getWorld().getServer().getGameRules().getInt(SelfCareHive.TRACKING_DURATION);
 		var iterator = knownBees.entrySet().iterator();
 		while (iterator.hasNext()) {
 			var entry = iterator.next();

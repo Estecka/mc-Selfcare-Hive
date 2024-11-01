@@ -9,9 +9,10 @@
 	],
 	"contact": {
 		"homepage": "https://modrinth.com/mod/selfcare-hive",
-		"sources": "https://github.com/Estecka/mc-SelfCare-Hive"
+		"sources": "https://github.com/Estecka/mc-SelfCare-Hive",
+		"issues":  "https://github.com/Estecka/mc-SelfCare-Hive/issues"
 	},
-	"license": "GNU AGPLv3",
+	"license": "EUPL-1.2",
 	"icon": "assets/selfcare-hive/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -23,8 +24,8 @@
 		"selfcare-hive.mixins.json"
 	],
 	"depends": {
-		"minecraft": ">=1.20.5",
-		"fabricloader": ">=0.15.10",
+		"minecraft": "^1.20.5",
+		"fabricloader": ">=0.16.9",
 		"fabric-api": "*",
 		"java": ">=21"
 	}
