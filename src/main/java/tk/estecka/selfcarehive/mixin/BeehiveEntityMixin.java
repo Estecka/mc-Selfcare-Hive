@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -27,7 +26,6 @@ import net.minecraft.block.entity.BeehiveBlockEntity.BeeData;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.BeeEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -139,14 +137,14 @@ implements IBeeColonyTracker
 
 	@Inject( method="readNbt", at=@At("TAIL") )
 	private void ReadCustomNBT(NbtCompound nbt, RegistryWrapper.WrapperLookup registries, CallbackInfo ci){
-		if (nbt.contains(KNOWNBEES_KEY, NbtElement.COMPOUND_TYPE)){
-			NbtCompound list = nbt.getCompound(KNOWNBEES_KEY);
-			for (String key : list.getKeys()){
+		NbtCompound map;
+		if (nbt.contains(KNOWNBEES_KEY) && (map=nbt.getCompound(KNOWNBEES_KEY).orElse(null)) != null){
+			for (String key : map.getKeys()){
 				UUID uuid;
 				long time;
 				try {
 					uuid = UUID.fromString(key);
-					time = list.getLong(key);
+					time = map.getLong(key, 0);
 				} catch (IllegalArgumentException|ClassCastException e){
 					SelfCareHive.LOGGER.error("Invalid last-seen data in behive at {}:\nKey: {}, Value:\n{}", this.pos, key, nbt.get(key).asString());
 					continue;
@@ -168,13 +166,10 @@ implements IBeeColonyTracker
 
 	@Inject(
 		require = 1,
-		method = {
-			"tryEnterHive(Lnet/minecraft/entity/Entity;)V", // 1.20.5
-			"method_21848(Lnet/minecraft/entity/passive/BeeEntity;)V" // 1.21.4
-		},
+		method = "tryEnterHive",
 		at = @At("TAIL")
 	)
-	private void OnBeeEntrance(@Coerce Entity bee, CallbackInfo ci){
+	private void OnBeeEntrance(BeeEntity bee, CallbackInfo ci){
 		UUID uuid = bee.getUuid();
 		if (FabricLoader.getInstance().isDevelopmentEnvironment() && !this.knownBees.containsKey(uuid))
 			SelfCareHive.LOGGER.warn("An unknown bee joined the hive: {}", uuid);
@@ -233,10 +228,7 @@ implements IBeeColonyTracker
 	 */
 	@ModifyArg(
 		require = 1,
-		method = {
-			"tryEnterHive(Lnet/minecraft/entity/Entity;)V", // 1.20.5
-			"method_21848(Lnet/minecraft/entity/passive/BeeEntity;)V" // 1.21.4
-		},
+		method = "tryEnterHive",
 		at=@At( value="INVOKE", target="net/minecraft/block/entity/BeehiveBlockEntity.addBee (Lnet/minecraft/block/entity/BeehiveBlockEntity$BeeData;)V" )
 	)
 	private BeeData ReduceExitDelay(BeeData original){

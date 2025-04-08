@@ -16,3 +16,7 @@ Current master
 ## 1.21.4
 ### Worked around:
 - `tryEnterHive` now takes a `BeeEntity` instead of an `Entity`. Target both versions and use `@Coerce`
+
+## 1.21.5
+- `NbtCompound::contains` no longer check the element type.
+- `NbtCompound` various get methods are now wrapped in optionals, or require a fallback as parameter.
