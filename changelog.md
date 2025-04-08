@@ -10,3 +10,5 @@ Initial Release
 	- Hives no longer virtually tick when unloaded.
 ### 1.0.3
 - Updated for MC 1.21.2
+### 1.0.4
+- Updated for MC 1.21.4 and MC 1.21.5

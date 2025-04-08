@@ -11,4 +11,8 @@ Current master
 
 ## 1.21.2
 ### Worked around:
-- `World.getGamerules()` was moved to `ServerWorld`. Use `MinecraftServer.getGamerules()` instead.
+- `World.getGamerules()` was moved to `ServerWorld`. Use `MinecraftServer::getGamerules` instead.
+
+## 1.21.4
+### Worked around:
+- `tryEnterHive` now takes a `BeeEntity` instead of an `Entity`. Target both versions and use `@Coerce`

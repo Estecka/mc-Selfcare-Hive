@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -165,8 +166,15 @@ implements IBeeColonyTracker
 		++((BeehiveEntityMixin)(Object)blockEntity).elapsedTicks;
 	}
 
-	@Inject(method="tryEnterHive(Lnet/minecraft/entity/Entity;)V", at=@At("TAIL"))
-	private void OnBeeEntrance(Entity bee, CallbackInfo ci){
+	@Inject(
+		require = 1,
+		method = {
+			"tryEnterHive(Lnet/minecraft/entity/Entity;)V", // 1.20.5
+			"method_21848(Lnet/minecraft/entity/passive/BeeEntity;)V" // 1.21.4
+		},
+		at = @At("TAIL")
+	)
+	private void OnBeeEntrance(@Coerce Entity bee, CallbackInfo ci){
 		UUID uuid = bee.getUuid();
 		if (FabricLoader.getInstance().isDevelopmentEnvironment() && !this.knownBees.containsKey(uuid))
 			SelfCareHive.LOGGER.warn("An unknown bee joined the hive: {}", uuid);
@@ -223,7 +231,14 @@ implements IBeeColonyTracker
 	/**
 	 * Makes bees leave the nest instantly for testing purposes
 	 */
-	@ModifyArg( method="tryEnterHive(Lnet/minecraft/entity/Entity;)V", at=@At(value="INVOKE", target="net/minecraft/block/entity/BeehiveBlockEntity.addBee (Lnet/minecraft/block/entity/BeehiveBlockEntity$BeeData;)V") )
+	@ModifyArg(
+		require = 1,
+		method = {
+			"tryEnterHive(Lnet/minecraft/entity/Entity;)V", // 1.20.5
+			"method_21848(Lnet/minecraft/entity/passive/BeeEntity;)V" // 1.21.4
+		},
+		at=@At( value="INVOKE", target="net/minecraft/block/entity/BeehiveBlockEntity.addBee (Lnet/minecraft/block/entity/BeehiveBlockEntity$BeeData;)V" )
+	)
 	private BeeData ReduceExitDelay(BeeData original){
 		if (!FabricLoader.getInstance().isDevelopmentEnvironment())
 			return original;
