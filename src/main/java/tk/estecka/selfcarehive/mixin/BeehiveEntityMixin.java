@@ -202,7 +202,7 @@ implements IBeeColonyTracker
 		BeeEntity babyEntity = baby.get();
 		if (babyEntity != null){
 			babyEntity.refreshPositionAndAngles(x, y, z, yaw, pitch);
-			babyEntity.getWorld().spawnEntity(babyEntity);
+			babyEntity.getEntityWorld().spawnEntity(babyEntity);
 		}
 
 		original.call(bee, x, y, z, yaw, pitch);

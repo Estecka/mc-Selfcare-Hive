@@ -52,7 +52,7 @@ public class BeehiveUtil
 		){
 			BeeEntity baby = parent.createChild(world, parent);
 			baby.setBaby(true);
-			baby.setPosition(parent.getPos());
+			baby.setPosition(parent.getEntityPos());
 			parent.resetLoveTicks();
 			parent.setBreedingAge(6000);
 			hiveState = SetHoneyLevel(honey-cost, world, hiveState, hivePos);

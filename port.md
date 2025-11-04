@@ -23,3 +23,6 @@ Current master
 
 ## 1.21.6
 - Serialization no longer directly manipulated NBT and must be backed by a codec.
+
+## 1.21.9
+- `Entity::getpos` and `Entity::getWorld` were replaced with `HeldItemContext::getEntityPos` and `HeldItemContext::getEntityWorld`.
