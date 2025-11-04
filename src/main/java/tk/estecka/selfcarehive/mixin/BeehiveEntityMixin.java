@@ -18,6 +18,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import com.mojang.serialization.Codec;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BeehiveBlockEntity;
@@ -25,9 +26,10 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BeehiveBlockEntity.BeeData;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.BeeEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
+import net.minecraft.util.Uuids;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import tk.estecka.selfcarehive.BeehiveUtil;
@@ -44,6 +46,7 @@ extends BlockEntity
 implements IBeeColonyTracker
 {
 	static private final String KNOWNBEES_KEY = "selfcare-hive:KnownBees";
+	static private final Codec<Map<UUID,Long>> CODEC = Codec.unboundedMap(Uuids.STRING_CODEC, Codec.LONG);
 
 	/**
 	 * The UUID of bees that have left the nest, and the amount of ticks since
@@ -125,33 +128,15 @@ implements IBeeColonyTracker
 /* # Serialization                                                            */
 /******************************************************************************/
 
-	@Inject( method="writeNbt", at=@At("TAIL") )
-	private void WriteCustomNBT(NbtCompound nbt, RegistryWrapper.WrapperLookup registries, CallbackInfo ci){
-		if (!knownBees.isEmpty()){
-			NbtCompound list = new NbtCompound();
-			for (var entry : knownBees.entrySet())
-				list.putLong(entry.getKey().toString(), entry.getValue());
-			nbt.put(KNOWNBEES_KEY, list);
-		}
+	@Inject( method="writeData", at=@At("TAIL") )
+	private void WriteCustomData(WriteView view, CallbackInfo ci){
+		if (!knownBees.isEmpty())
+			view.put(KNOWNBEES_KEY, CODEC, this.knownBees);
 	}
 
-	@Inject( method="readNbt", at=@At("TAIL") )
-	private void ReadCustomNBT(NbtCompound nbt, RegistryWrapper.WrapperLookup registries, CallbackInfo ci){
-		NbtCompound map;
-		if (nbt.contains(KNOWNBEES_KEY) && (map=nbt.getCompound(KNOWNBEES_KEY).orElse(null)) != null){
-			for (String key : map.getKeys()){
-				UUID uuid;
-				long time;
-				try {
-					uuid = UUID.fromString(key);
-					time = map.getLong(key, 0);
-				} catch (IllegalArgumentException|ClassCastException e){
-					SelfCareHive.LOGGER.error("Invalid last-seen data in behive at {}:\nKey: {}, Value:\n{}", this.pos, key, nbt.get(key).asString());
-					continue;
-				}
-				knownBees.put(uuid, time);
-			}
-		}
+	@Inject( method="readData", at=@At("TAIL") )
+	private void ReadCustomData(ReadView view, CallbackInfo ci){
+		view.read(KNOWNBEES_KEY, CODEC).ifPresent(this.knownBees::putAll);
 	}
 
 

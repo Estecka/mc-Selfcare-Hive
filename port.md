@@ -20,3 +20,6 @@ Current master
 ## 1.21.5
 - `NbtCompound::contains` no longer check the element type.
 - `NbtCompound` various get methods are now wrapped in optionals, or require a fallback as parameter.
+
+## 1.21.6
+- Serialization no longer directly manipulated NBT and must be backed by a codec.
